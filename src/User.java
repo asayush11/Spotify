@@ -17,11 +17,7 @@ public class User {
     }
 
     public void addLanguage( Language language) {
-        long count = languages.stream()
-                .filter(language1 -> language1.equals(language))
-                .count();
-
-        if(count > 0) {
+        if(languages.stream().anyMatch(l -> l.equals(language))){
             System.out.println("You already have selected this language");
             return;
         }
@@ -30,22 +26,15 @@ public class User {
     }
 
     public void removeLanguage(Language language) {
-        for(Language language1 : languages) {
-            if(language.equals(language1)) {
-                languages.remove(language1);
-                return;
-            }
-        }
+        languages.removeIf(l -> l.equals(language));
         System.out.println(language + " deleted from your preferences");
     }
 
     public Playlist createPlaylist (String name) {
-        for(Playlist playlist : playlists) {
-            if(playlist.getName().equals(name)) {
-                System.out.println("Playlist already exists");
-                return null;
-            }
-        }
+        if (playlists.stream().anyMatch(p -> p.getName().equals(name))){
+            System.out.println("Playlist already exists");
+            return null;
+        };
         Playlist playlist = new Playlist(name);
         playlists.add(playlist);
         System.out.println("Playlist " + name + " created for user " + this.userID);
@@ -53,33 +42,31 @@ public class User {
     }
 
     public void deletePlaylist (String name) {
-        for(Playlist playlist : playlists) {
-            if(playlist.getName().equals(name)) {
-                System.out.println("Playlist " + name + " deleted for user " + this.userID);
-                return;
-            }
+        if(playlists.removeIf(p -> p.getName().equals(name))){
+            System.out.println("Playlist " + name + " deleted for user " + this.userID);
+            return;
         }
         System.out.println("Playlist doesn't exist");
     }
 
     public void addToPlaylist (String name, Music newMusic) {
-       for(Playlist playlist : playlists) {
-           if(playlist.getName().equals(name)) {
-               playlist.addMusic(newMusic);
-               return;
-           }
-       }
-       System.out.println("Playlist doesn't exist");
+        playlists.parallelStream()
+                .filter(p -> p.getName().equals(name))
+                .findFirst()
+                .ifPresentOrElse(
+                        p -> p.addMusic(newMusic),
+                        () -> System.out.println(this.userID +" doesn't have playlist " + name)
+                );
     }
 
-    public void deleteFromPlaylist (String name, Music newMusic) {
-        for(Playlist playlist : playlists) {
-            if(playlist.getName().equals(name)) {
-                playlist.removeMusic(newMusic);
-                return;
-            }
-        }
-        System.out.println("Playlist doesn't exist");
+    public void deleteFromPlaylist (String name, Music oldMusic) {
+        playlists.parallelStream()
+                .filter(p -> p.getName().equals(name))
+                .findFirst()
+                .ifPresentOrElse(
+                        p -> p.removeMusic(oldMusic),
+                        () -> System.out.println(this.userID +" doesn't have playlist " + name)
+                );
     }
 
     public String getUserID() {
@@ -98,7 +85,7 @@ public class User {
 
     public void displayLanguages() {
         System.out.println("Language preferences for user " + this.userID  );
-        languages
+        languages.parallelStream()
                 .forEach(System.out::println);
     }
 }
