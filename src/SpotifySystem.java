@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class SpotifySystem {
-    private static SpotifySystem instance;
+    private static volatile SpotifySystem instance;
     private final Map<String, Music> musics;
     private final Map<String, User> users;
 
@@ -16,7 +16,11 @@ public class SpotifySystem {
 
     public synchronized static SpotifySystem getInstance() {
         if(instance == null) {
-            instance = new SpotifySystem();
+            synchronized (SpotifySystem.class){
+                if(instance == null){
+                    instance = new SpotifySystem();
+                }
+            }
         }
         return instance;
     }
